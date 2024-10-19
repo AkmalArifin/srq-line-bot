@@ -1,3 +1,4 @@
 private.key
 public.key
 .env
+db.sql

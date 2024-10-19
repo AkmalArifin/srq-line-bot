@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+
+	"example.com/yahfaz/db"
 	"example.com/yahfaz/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -14,11 +17,13 @@ func main() {
 		panic(err.Error())
 	}
 
+	// Initialize DB
+	db.InitDB()
+
 	r := gin.Default()
 
 	routes.RegisterRoutes(r)
 
-	port := ":5050"
-
+	port := ":" + os.Getenv("PORT")
 	r.Run(port)
 }
