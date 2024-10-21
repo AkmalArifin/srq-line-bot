@@ -6,10 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"example.com/yahfaz/models"
+	"example.com/yahfaz/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/line/line-bot-sdk-go/v8/linebot/messaging_api"
 	"github.com/line/line-bot-sdk-go/v8/linebot/webhook"
@@ -90,6 +93,8 @@ func callbackHandler(c *gin.Context) {
 
 func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, message webhook.TextMessageContent, userID string) {
 	switch strings.ToLower(message.Text) {
+
+	/** Handle Learning */
 	case "learn":
 		state[userID] = "learn"
 
@@ -109,6 +114,7 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 
 		log.Println("Sent text reply.")
 
+	/** Handle Review */
 	case "review":
 		state[userID] = "review"
 
@@ -179,12 +185,59 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 		log.Println("Sent reply text")
 		return
 
+	/** Handle Status */
 	case "status":
-		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+		status, err := statusMemorization(userID)
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		var timeKeys []time.Time
+		for k, _ := range status {
+			timeKeys = append(timeKeys, k)
+		}
+
+		sort.Slice(timeKeys, func(i, j int) bool {
+			return timeKeys[i].Before(timeKeys[j])
+		})
+
+		text := ""
+		for i, timeKey := range timeKeys {
+			if i == 0 {
+				text += "Today:\n"
+			} else {
+				text += fmt.Sprintf("%s:\n", timeKey.Weekday().String())
+			}
+			var hourKeys []int
+			for hourKey, _ := range status[timeKey] {
+				hourKeys = append(hourKeys, hourKey)
+			}
+
+			sort.Ints(hourKeys)
+
+			for _, hourKey := range hourKeys {
+				var noon string
+				var time int
+				if hourKey >= 12 {
+					noon = "pm"
+					time = hourKey - 12
+				} else {
+					noon = "am"
+				}
+				if time == 0 {
+					time += 12
+				}
+				text += fmt.Sprintf(" - %d %s: %d\n", time, noon, status[timeKey][hourKey])
+			}
+		}
+
+		_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "In progress",
+					Text: text,
 				},
 			},
 		})
@@ -194,20 +247,55 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 			return
 		}
 
-		status, err := statusMemorization(userID)
+		log.Println("Sent status reply")
+		return
+
+	/** Handle Show */
+	case "show":
+		juzPages, err := showMemorizationPage(userID)
 
 		if err != nil {
 			log.Println(err.Error())
 			return
 		}
 
-		for ind, stat := range status {
-			log.Println(ind, stat)
+		var keys []int
+		for k := range juzPages {
+			keys = append(keys, k)
 		}
 
-		log.Println("Sent text reply")
-		return
+		sort.Ints(keys)
 
+		text := ""
+		for _, k := range keys {
+			text += fmt.Sprintf("Juz %d: ", k)
+			for _, i := range juzPages[k] {
+				text += fmt.Sprintf("%d ", i)
+			}
+			text += "\n"
+		}
+
+		if text == "" {
+			text = "Sorry you don't have any memorization. To add pages to your memorization list, use 'Learn' command"
+		}
+
+		_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+			ReplyToken: replyToken,
+			Messages: []messaging_api.MessageInterface{
+				messaging_api.TextMessage{
+					Text: text,
+				},
+			},
+		})
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		log.Println("Sent show text")
+
+	/** Handle Help */
 	case "help":
 		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 			ReplyToken: replyToken,
@@ -221,6 +309,7 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 					help          Help about any command
 					learn         Add page to your memorization list
 					review       Reviewing page based on spaced repetition system
+					show         Show your memorization list
 					status       Show review forecast
 					`,
 				},
@@ -235,12 +324,13 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 		log.Println("Send help text")
 		return
 
+	/** Handle Default */
 	default:
 		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "Please only input 'Learn', 'Review', 'Status', or 'Help' if you want to know the details",
+					Text: "Please only input 'Learn', 'Review', 'Status', 'Show', or 'Help' if you want to know the details",
 				},
 			},
 		})
@@ -257,6 +347,8 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 
 func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, message webhook.TextMessageContent, userID string) {
 	switch strings.ToLower(message.Text) {
+
+	/** Handle Canceling */
 	case "cancel":
 		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 			ReplyToken: replyToken,
@@ -277,6 +369,7 @@ func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, me
 		log.Println("Learning canceled")
 		return
 
+	/** Handle Help */
 	case "help":
 		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 			ReplyToken: replyToken,
@@ -298,6 +391,7 @@ func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, me
 		log.Println("Sent help text")
 		return
 
+	/** Handle Input Learning */
 	default:
 		pageID, err := strconv.ParseInt(message.Text, 10, 64)
 
@@ -307,6 +401,29 @@ func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, me
 				Messages: []messaging_api.MessageInterface{
 					messaging_api.TextMessage{
 						Text: "Please only input the number, 'Cancel' if you want to cancel, or 'Help' if you want to know the details",
+					},
+				},
+			})
+
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+
+			log.Println("Sent text reply")
+			return
+		}
+
+		// Input validation
+		if pageID < 1 || pageID > 604 {
+			_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+				ReplyToken: replyToken,
+				Messages: []messaging_api.MessageInterface{
+					messaging_api.TextMessage{
+						Text: fmt.Sprintf("There is no page %d in Quran Mushaf Utsmani", pageID),
+					},
+					messaging_api.TextMessage{
+						Text: "Please input quran pages that you want to add into your memorization",
 					},
 				},
 			})
@@ -356,11 +473,36 @@ func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, me
 
 func confirmStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, message webhook.TextMessageContent, userID string) {
 	switch strings.ToLower(message.Text) {
+
+	/** Handle Yes */
 	case "yes":
 		err := createMemorizationPage(learnState[userID], userID)
 
 		if err != nil {
-			log.Println(err.Error())
+			if !utils.IsDuplicateError(err.Error()) {
+				log.Println(err.Error())
+				return
+			}
+
+			_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+				ReplyToken: replyToken,
+				Messages: []messaging_api.MessageInterface{
+					messaging_api.TextMessage{
+						Text: fmt.Sprintf("You've already added page %d", learnState[userID]),
+					},
+					messaging_api.TextMessage{
+						Text: "Please input quran pages that you want to add into your memorization",
+					},
+				},
+			})
+
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+
+			state[userID] = "learn"
+			log.Println("Sent error text")
 			return
 		}
 
@@ -381,6 +523,9 @@ func confirmStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, 
 		state[userID] = "idle"
 		learnState[userID] = 0
 		log.Println("Memorization created")
+		return
+
+	/** Handle No */
 	case "no":
 		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 			ReplyToken: replyToken,

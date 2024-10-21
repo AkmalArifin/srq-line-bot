@@ -17,6 +17,7 @@ type UserMemorization struct {
 	TimeReview      NullTime    `json:"time_review"`
 	RepetitionCount null.Int    `json:"repetition_count"`
 	CorrectCount    null.Int    `json:"correct_count"`
+	UniqueKey       null.String `json:"unique_key"`
 	CreatedAt       NullTime    `json:"created_at"`
 	UpdatedAt       NullTime    `json:"updated_at"`
 }
@@ -35,7 +36,7 @@ func GetAllUserMemorization() ([]UserMemorization, error) {
 
 	for rows.Next() {
 		var userMemorization UserMemorization
-		err = rows.Scan(&userMemorization.ID, &userMemorization.UserID, &userMemorization.CardType, &userMemorization.AyahID, &userMemorization.PageID, &userMemorization.Level, &userMemorization.TimeReview, &userMemorization.RepetitionCount, &userMemorization.CorrectCount, &userMemorization.CreatedAt, &userMemorization.UpdatedAt)
+		err = rows.Scan(&userMemorization.ID, &userMemorization.UserID, &userMemorization.CardType, &userMemorization.AyahID, &userMemorization.PageID, &userMemorization.Level, &userMemorization.TimeReview, &userMemorization.RepetitionCount, &userMemorization.CorrectCount, &userMemorization.UniqueKey, &userMemorization.CreatedAt, &userMemorization.UpdatedAt)
 
 		if err != nil {
 			return nil, err
@@ -61,7 +62,7 @@ func GetUserMemorizationByUserID(userID string) ([]UserMemorization, error) {
 
 	for rows.Next() {
 		var userMemorization UserMemorization
-		err = rows.Scan(&userMemorization.ID, &userMemorization.UserID, &userMemorization.CardType, &userMemorization.AyahID, &userMemorization.PageID, &userMemorization.Level, &userMemorization.TimeReview, &userMemorization.RepetitionCount, &userMemorization.CorrectCount, &userMemorization.CreatedAt, &userMemorization.UpdatedAt)
+		err = rows.Scan(&userMemorization.ID, &userMemorization.UserID, &userMemorization.CardType, &userMemorization.AyahID, &userMemorization.PageID, &userMemorization.Level, &userMemorization.TimeReview, &userMemorization.RepetitionCount, &userMemorization.CorrectCount, &userMemorization.UniqueKey, &userMemorization.CreatedAt, &userMemorization.UpdatedAt)
 
 		if err != nil {
 			return nil, err
@@ -87,7 +88,37 @@ func GetReviewByUserID(userID string) ([]UserMemorization, error) {
 
 	for rows.Next() {
 		var userMemorization UserMemorization
-		err = rows.Scan(&userMemorization.ID, &userMemorization.UserID, &userMemorization.CardType, &userMemorization.AyahID, &userMemorization.PageID, &userMemorization.Level, &userMemorization.TimeReview, &userMemorization.RepetitionCount, &userMemorization.CorrectCount, &userMemorization.CreatedAt, &userMemorization.UpdatedAt)
+		err = rows.Scan(&userMemorization.ID, &userMemorization.UserID, &userMemorization.CardType, &userMemorization.AyahID, &userMemorization.PageID, &userMemorization.Level, &userMemorization.TimeReview, &userMemorization.RepetitionCount, &userMemorization.CorrectCount, &userMemorization.UniqueKey, &userMemorization.CreatedAt, &userMemorization.UpdatedAt)
+
+		if err != nil {
+			return nil, err
+		}
+
+		userMemorizations = append(userMemorizations, userMemorization)
+	}
+
+	return userMemorizations, nil
+}
+
+func GetStatusByUserID(userID string) ([]UserMemorization, error) {
+	currentTime := time.Now()
+	// nextWeek := currentTime.AddDate(0, 0, 7)
+	// nextWeekTime := time.Date(nextWeek.Year(), nextWeek.Month(), nextWeek.Day(), 23, 59, 59, 0, currentTime.Location())
+
+	query := "SELECT * FROM user_memorization WHERE user_id = ? AND time_review > ? ORDER BY time_review"
+	rows, err := db.DB.Query(query, userID, currentTime)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var userMemorizations []UserMemorization
+
+	for rows.Next() {
+		var userMemorization UserMemorization
+		err = rows.Scan(&userMemorization.ID, &userMemorization.UserID, &userMemorization.CardType, &userMemorization.AyahID, &userMemorization.PageID, &userMemorization.Level, &userMemorization.TimeReview, &userMemorization.RepetitionCount, &userMemorization.CorrectCount, &userMemorization.UniqueKey, &userMemorization.CreatedAt, &userMemorization.UpdatedAt)
 
 		if err != nil {
 			return nil, err
@@ -104,7 +135,7 @@ func GetUserMemorizationByID(id int64) (UserMemorization, error) {
 	row := db.DB.QueryRow(query, id)
 
 	var userMemorization UserMemorization
-	err := row.Scan(&userMemorization.ID, &userMemorization.UserID, &userMemorization.CardType, &userMemorization.AyahID, &userMemorization.PageID, &userMemorization.Level, &userMemorization.TimeReview, &userMemorization.RepetitionCount, &userMemorization.CorrectCount, &userMemorization.CreatedAt, &userMemorization.UpdatedAt)
+	err := row.Scan(&userMemorization.ID, &userMemorization.UserID, &userMemorization.CardType, &userMemorization.AyahID, &userMemorization.PageID, &userMemorization.Level, &userMemorization.TimeReview, &userMemorization.RepetitionCount, &userMemorization.CorrectCount, &userMemorization.UniqueKey, &userMemorization.CreatedAt, &userMemorization.UpdatedAt)
 
 	if err != nil {
 		return UserMemorization{}, err
@@ -115,8 +146,8 @@ func GetUserMemorizationByID(id int64) (UserMemorization, error) {
 
 func (m *UserMemorization) Save() error {
 	query := `
-	INSERT INTO user_memorization (user_id, card_type, ayah_id, page_id, level, time_review, repetition_count, correct_count, created_at, updated_at)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	INSERT INTO user_memorization (user_id, card_type, ayah_id, page_id, level, time_review, repetition_count, correct_count, unique_key, created_at, updated_at)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	stmt, err := db.DB.Prepare(query)
 
@@ -129,7 +160,7 @@ func (m *UserMemorization) Save() error {
 	m.CreatedAt.SetValue(time.Now())
 	m.UpdatedAt.SetValue(time.Now())
 
-	results, err := stmt.Exec(m.UserID, m.CardType, m.AyahID, m.PageID, m.Level, m.TimeReview, m.RepetitionCount, m.CorrectCount, m.CreatedAt, m.UpdatedAt)
+	results, err := stmt.Exec(m.UserID, m.CardType, m.AyahID, m.PageID, m.Level, m.TimeReview, m.RepetitionCount, m.CorrectCount, m.UniqueKey, m.CreatedAt, m.UpdatedAt)
 
 	if err != nil {
 		return err
