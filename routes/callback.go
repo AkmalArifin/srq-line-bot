@@ -1,8 +1,10 @@
 package routes
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -44,6 +46,15 @@ func callbackHandler(c *gin.Context) {
 		// log.Printf("/callback called%+v...\n", event)
 
 		switch e := event.(type) {
+		case webhook.FollowEvent:
+			// Get Data
+			var userID string
+			switch s := e.Source.(type) {
+			case webhook.UserSource:
+				userID = s.UserId
+			}
+
+			followHandler(userID)
 		case webhook.MessageEvent:
 			switch message := e.Message.(type) {
 			case webhook.TextMessageContent:
@@ -183,7 +194,45 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 			return
 		}
 
+		status, err := statusMemorization(userID)
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		for ind, stat := range status {
+			log.Println(ind, stat)
+		}
+
 		log.Println("Sent text reply")
+		return
+
+	case "help":
+		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+			ReplyToken: replyToken,
+			Messages: []messaging_api.MessageInterface{
+				messaging_api.TextMessage{
+					Text: "Yahfaz is a simple bot that helped you to remind which pages of Quran that you need to review. It is using spaced repetition system in review system. It is made in order to accompany you for memorizing Quran while busy with works or studies and not having a full time dedication for memorizing Quran.",
+				},
+				messaging_api.TextMessage{
+					// Text: fmt.Sprintf("Available Commands:\n  help\t\t\t\tHelp about any command\n  help\t\t\t\tAdd page to your memorization list"),
+					Text: `Available Commands:
+					help          Help about any command
+					learn         Add page to your memorization list
+					review       Reviewing page based on spaced repetition system
+					status       Show review forecast
+					`,
+				},
+			},
+		})
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		log.Println("Send help text")
 		return
 
 	default:
@@ -228,6 +277,27 @@ func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, me
 		log.Println("Learning canceled")
 		return
 
+	case "help":
+		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+			ReplyToken: replyToken,
+			Messages: []messaging_api.MessageInterface{
+				messaging_api.TextMessage{
+					Text: "This command is for adding page into your memorization list. After you memorized page of Quran, add the page into this command. Yahfaz will let you know, when you need to review this page later by using 'review' command.",
+				},
+				messaging_api.TextMessage{
+					Text: "Please input quran pages that you want to add into your memorization",
+				},
+			},
+		})
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		log.Println("Sent help text")
+		return
+
 	default:
 		pageID, err := strconv.ParseInt(message.Text, 10, 64)
 
@@ -236,7 +306,7 @@ func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, me
 				ReplyToken: replyToken,
 				Messages: []messaging_api.MessageInterface{
 					messaging_api.TextMessage{
-						Text: "Please only input the number or 'Cancel' if you want to cancel",
+						Text: "Please only input the number, 'Cancel' if you want to cancel, or 'Help' if you want to know the details",
 					},
 				},
 			})
@@ -434,12 +504,36 @@ func reviewStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, m
 		log.Println("Reviewing canceled")
 		return
 
+	case "help":
+		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+			ReplyToken: replyToken,
+			Messages: []messaging_api.MessageInterface{
+				messaging_api.TextMessage{
+					Text: "This command is to help you know which page from list of your memorization that you should review. You won't be able review all your memorization at once. Every time you answer 'easy' for your review, it will show in review longer than before. Please answer as honest as possible.",
+				},
+				messaging_api.TextMessage{
+					Text: "For tips, you can ask for your friend to check on your memorization or you can use another apps that could help you. For our ground rules. Easy if you made 0-2 mistakes. Good if you made 3-5 mistakes. Hard if you made more than 5 mistakes.",
+				},
+				messaging_api.TextMessage{
+					Text: "The key is to be consistent, every day at least you check once what are the pages that you need to review. Yes it will take much longer, but The Prophet Muhammad told us that the most beloved acts of worship are those that are consistent, even if they are small (Sahih Muslim 783).",
+				},
+			},
+		})
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		log.Println("Sent help text")
+		return
+
 	default:
 		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "Please only input the 'Easy', 'Good', 'Hard', or 'Cancel' if you want to cancel",
+					Text: "Please only input the 'Easy', 'Good', 'Hard', 'Cancel' if you want to cancel, or 'Help' if you want to know the details",
 				},
 			},
 		})
@@ -451,4 +545,48 @@ func reviewStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, m
 		log.Println("Sent text reply")
 		return
 	}
+}
+
+func followHandler(userID string) {
+	url := fmt.Sprintf("https://api.line.me/v2/bot/profile/%s", userID)
+	req, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("TOKEN")))
+
+	client := &http.Client{}
+
+	response, err := client.Do(req)
+
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	defer response.Body.Close()
+
+	var profile models.Profile
+	err = json.NewDecoder(response.Body).Decode(&profile)
+
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	var user models.User
+	user.UserID.SetValid(profile.UserID.ValueOrZero())
+	user.DisplayName.SetValid(profile.DisplayName.ValueOrZero())
+	user.Language.SetValid(profile.Language.ValueOrZero())
+	err = user.Save()
+
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	log.Println("Profile saved")
 }
