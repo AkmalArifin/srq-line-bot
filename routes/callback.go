@@ -118,7 +118,7 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 	case "review":
 		state[userID] = "review"
 
-		memorizations, err := models.GetReviewByUserID(userID)
+		memorizations, err := dueMemorization(userID)
 		log.Println(memorizations)
 
 		if err != nil {
@@ -194,6 +194,17 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 			return
 		}
 
+		review, err := dueMemorization(userID)
+
+		text := ""
+
+		text += fmt.Sprintf("𝙄𝙣 𝘿𝙪𝙚: %d\n", len(review))
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
 		var timeKeys []time.Time
 		for k := range status {
 			timeKeys = append(timeKeys, k)
@@ -203,7 +214,6 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 			return timeKeys[i].Before(timeKeys[j])
 		})
 
-		text := ""
 		for i, timeKey := range timeKeys {
 			if i == 0 {
 				text += "Today:\n"
@@ -225,12 +235,16 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 					time = hourKey - 12
 				} else {
 					noon = "am"
+					time = hourKey
 				}
 				if time == 0 {
 					time += 12
 				}
 				text += fmt.Sprintf(" - %d %s: %d\n", time, noon, status[timeKey][hourKey])
+
+				// text += fmt.Sprintf(" - %d: %d\n", hourKey, status[timeKey][hourKey])
 			}
+			text += "\n"
 		}
 
 		_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
@@ -642,7 +656,7 @@ func reviewStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, m
 			return
 		}
 
-		memorizations, err := models.GetReviewByUserID(userID)
+		memorizations, err := dueMemorization(userID)
 
 		if err != nil {
 			log.Println(err.Error())

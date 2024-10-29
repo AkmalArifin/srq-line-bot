@@ -102,8 +102,6 @@ func GetReviewByUserID(userID string) ([]UserMemorization, error) {
 
 func GetStatusByUserID(userID string) ([]UserMemorization, error) {
 	currentTime := time.Now()
-	// nextWeek := currentTime.AddDate(0, 0, 7)
-	// nextWeekTime := time.Date(nextWeek.Year(), nextWeek.Month(), nextWeek.Day(), 23, 59, 59, 0, currentTime.Location())
 
 	query := "SELECT * FROM user_memorization WHERE user_id = ? AND time_review > ? ORDER BY time_review"
 	rows, err := db.DB.Query(query, userID, currentTime)

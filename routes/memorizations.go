@@ -61,7 +61,6 @@ func statusMemorization(userID string) (map[time.Time]map[int]int, error) {
 	}
 
 	status := make(map[time.Time]map[int]int)
-	// borderTime := time.Now().Local().AddDate(0, 0, 7).Truncate(24 * time.Hour)
 
 	for i := 0; i < 7; i++ {
 		timeKey := time.Now().Local().AddDate(0, 0, i).Truncate(24 * time.Hour)
@@ -69,9 +68,6 @@ func statusMemorization(userID string) (map[time.Time]map[int]int, error) {
 	}
 
 	for _, m := range memorizations {
-		// if m.TimeReview.Time.After(borderTime) {
-		// 	break
-		// }
 
 		timeKey := m.TimeReview.Time.Local().Truncate(24 * time.Hour)
 		hourKey := m.TimeReview.Time.Local().Hour()
@@ -90,6 +86,12 @@ func statusMemorization(userID string) (map[time.Time]map[int]int, error) {
 	}
 
 	return status, nil
+}
+
+func dueMemorization(userID string) ([]models.UserMemorization, error) {
+	memorizations, err := models.GetReviewByUserID(userID)
+
+	return memorizations, err
 }
 
 func showMemorizationPage(userID string) (map[int][]int, error) {

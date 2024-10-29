@@ -10,22 +10,24 @@ func GetTimeReview(level int64) time.Time {
 
 	switch level {
 	case 1:
-		return now.Add(4 * time.Hour)
+		return now
 	case 2:
-		return now.Add(8 * time.Hour)
+		return now.Add(4 * time.Hour)
 	case 3:
-		return now.Add((24*1 - 1) * time.Hour)
+		return now.Add(8 * time.Hour)
 	case 4:
-		return now.Add((24*2 - 1) * time.Hour)
+		return now.Add((24*1 - 1) * time.Hour)
 	case 5:
-		return now.Add((24*7 - 1) * time.Hour)
+		return now.Add((24*2 - 1) * time.Hour)
 	case 6:
-		return now.Add((24*14 - 1) * time.Hour)
+		return now.Add((24*7 - 1) * time.Hour)
 	case 7:
-		return now.Add((24*30 - 1) * time.Hour)
+		return now.Add((24*14 - 1) * time.Hour)
 	case 8:
-		return now.Add((24*120 - 1) * time.Hour)
+		return now.Add((24*30 - 1) * time.Hour)
 	case 9:
+		return now.Add((24*120 - 1) * time.Hour)
+	case 10:
 		return time.Time{}
 	default:
 		return now
