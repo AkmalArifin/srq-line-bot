@@ -195,7 +195,7 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 		}
 
 		var timeKeys []time.Time
-		for k, _ := range status {
+		for k := range status {
 			timeKeys = append(timeKeys, k)
 		}
 
@@ -211,7 +211,7 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 				text += fmt.Sprintf("%s:\n", timeKey.Weekday().String())
 			}
 			var hourKeys []int
-			for hourKey, _ := range status[timeKey] {
+			for hourKey := range status[timeKey] {
 				hourKeys = append(hourKeys, hourKey)
 			}
 
@@ -301,16 +301,28 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "Yahfaz is a simple bot that helped you to remind which pages of Quran that you need to review. It is using spaced repetition system in review system. It is made in order to accompany you for memorizing Quran while busy with works or studies and not having a full time dedication for memorizing Quran.",
+					Text: `Yahfaz is a bot that supports you in memorizing the Quran using a spaced repetition system, helping you stay consistent even with a busy schedule.
+
+𝙈𝙖𝙞𝙣 𝙁𝙚𝙖𝙩𝙪𝙧𝙚𝙨
+1. Learn
+Use the 𝙡𝙚𝙖𝙧𝙣 feature to log Quran pages you've memorized. Yahfaz accepts entries one page at a time.
+
+2. Review
+Yahfaz will schedule reviews for you based on spaced repetition principles, reminding you when it's time to revisit a page. To see which pages are scheduled for review, use the 𝙨𝙩𝙖𝙩𝙪𝙨 command. When you're ready, use the 𝙧𝙚𝙫𝙞𝙚𝙬 command and assess your memorization for each page:
+	• Easy: 0-1 mistakes (review interval increases).
+	• Good: 2-3 mistakes.
+	• Hard: 4+ mistakes (review interval shortens).
+
+With Yahfaz, you can keep track of your progress and review efficiently, ensuring long-term retention.
+					`,
 				},
 				messaging_api.TextMessage{
-					// Text: fmt.Sprintf("Available Commands:\n  help\t\t\t\tHelp about any command\n  help\t\t\t\tAdd page to your memorization list"),
-					Text: `Available Commands:
-					help          Help about any command
-					learn         Add page to your memorization list
-					review       Reviewing page based on spaced repetition system
-					show         Show your memorization list
-					status       Show review forecast
+					Text: `𝘼𝙫𝙖𝙞𝙡𝙖𝙗𝙡𝙚 𝘾𝙤𝙢𝙢𝙖𝙣𝙙𝙨:
+𝙝𝙚𝙡𝙥          Help about any command
+𝙡𝙚𝙖𝙧𝙣         Add page to your memorization list
+𝙧𝙚𝙫𝙞𝙚𝙬       Reviewing page based on spaced repetition system
+𝙨𝙝𝙤𝙬         Show your memorization list
+𝙨𝙩𝙖𝙩𝙪𝙨       Show review forecast
 					`,
 				},
 			},
@@ -331,6 +343,9 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
 					Text: "Please only input 'Learn', 'Review', 'Status', 'Show', or 'Help' if you want to know the details",
+				},
+				messaging_api.TextMessage{
+					Text: "𝙏𝙚𝙨𝙩",
 				},
 			},
 		})
