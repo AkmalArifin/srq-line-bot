@@ -102,7 +102,7 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "Please input quran pages that you want to add into your memorization",
+					Text: "Please enter the Quran pages you want to add to your memorization.",
 				},
 			},
 		})
@@ -131,7 +131,7 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 				ReplyToken: replyToken,
 				Messages: []messaging_api.MessageInterface{
 					messaging_api.TextMessage{
-						Text: "Sorry, you don't have any cards to reviewed. To check when you have to review, type 'Status'",
+						Text: "Sorry, you don't have any cards to reviewed. To check when you have to review, type 𝙨𝙩𝙖𝙩𝙪𝙨",
 					},
 				},
 			})
@@ -276,7 +276,7 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 		}
 
 		if text == "" {
-			text = "Sorry you don't have any memorization. To add pages to your memorization list, use 'Learn' command"
+			text = "Sorry you don't have any memorization. To add pages to your memorization list, use 𝙡𝙚𝙖𝙧𝙣 command"
 		}
 
 		_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
@@ -304,25 +304,29 @@ func idleStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, mes
 					Text: `Yahfaz is a bot that supports you in memorizing the Quran using a spaced repetition system, helping you stay consistent even with a busy schedule.
 
 𝙈𝙖𝙞𝙣 𝙁𝙚𝙖𝙩𝙪𝙧𝙚𝙨
+
 1. Learn
 Use the 𝙡𝙚𝙖𝙧𝙣 feature to log Quran pages you've memorized. Yahfaz accepts entries one page at a time.
 
 2. Review
 Yahfaz will schedule reviews for you based on spaced repetition principles, reminding you when it's time to revisit a page. To see which pages are scheduled for review, use the 𝙨𝙩𝙖𝙩𝙪𝙨 command. When you're ready, use the 𝙧𝙚𝙫𝙞𝙚𝙬 command and assess your memorization for each page:
-	• Easy: 0-1 mistakes (review interval increases).
-	• Good: 2-3 mistakes.
-	• Hard: 4+ mistakes (review interval shortens).
+	• Easy: 0-2 mistakes (review interval increases).
+	• Good: 3-4 mistakes.
+	• Hard: 5+ mistakes (review interval shortens).
 
 With Yahfaz, you can keep track of your progress and review efficiently, ensuring long-term retention.
 					`,
 				},
 				messaging_api.TextMessage{
 					Text: `𝘼𝙫𝙖𝙞𝙡𝙖𝙗𝙡𝙚 𝘾𝙤𝙢𝙢𝙖𝙣𝙙𝙨:
-𝙝𝙚𝙡𝙥          Help about any command
-𝙡𝙚𝙖𝙧𝙣         Add page to your memorization list
-𝙧𝙚𝙫𝙞𝙚𝙬       Reviewing page based on spaced repetition system
-𝙨𝙝𝙤𝙬         Show your memorization list
-𝙨𝙩𝙖𝙩𝙪𝙨       Show review forecast
+
+𝙝𝙚𝙡𝙥              Help about guide and commands.
+𝙝𝙚𝙡𝙥 𝙡𝙚𝙖𝙧𝙣      Help about learn command.
+𝙝𝙚𝙡𝙥 𝙧𝙚𝙫𝙞𝙚𝙬    Help aabout review command.
+𝙡𝙚𝙖𝙧𝙣              Add page to your memorization list
+𝙧𝙚𝙫𝙞𝙚𝙬           Reviewing page based on spaced repetition system
+𝙨𝙝𝙤𝙬             Show your memorization list
+𝙨𝙩𝙖𝙩𝙪𝙨            Show review forecast
 					`,
 				},
 			},
@@ -336,16 +340,63 @@ With Yahfaz, you can keep track of your progress and review efficiently, ensurin
 		log.Println("Send help text")
 		return
 
+	case "help learn":
+		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+			ReplyToken: replyToken,
+			Messages: []messaging_api.MessageInterface{
+				messaging_api.TextMessage{
+					Text: `𝙇𝙚𝙖𝙧𝙣 𝘾𝙤𝙢𝙢𝙖𝙣𝙙
+
+Use this command to add pages to your memorization list. After you've memorized a Quran page, add it here. Yahfaz will notify you when it's time to review this page using the 𝙧𝙚𝙫𝙞𝙚𝙬 command.`,
+				},
+			},
+		})
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		log.Println("Sent help text")
+		return
+
+	case "help review":
+		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+			ReplyToken: replyToken,
+			Messages: []messaging_api.MessageInterface{
+				messaging_api.TextMessage{
+					Text: `𝙍𝙚𝙫𝙞𝙚𝙬 𝘾𝙤𝙢𝙢𝙖𝙣𝙙
+
+This command shows which pages in your memorization list are due for review. You won’t review everything at once; each page reappears based on your previous responses, with 𝙚𝙖𝙨𝙮 reviews taking longer to reappear.
+
+Review Guidelines:
+	• Easy: 0-2 mistakes
+	• Good: 3-5 mistakes
+	• Hard: 5+ mistakes
+
+Answer as honestly as possible for effective scheduling. For accurate reviews, consider asking a friend to listen or using another memorization app.
+
+𝗖𝗼𝗻𝘀𝗶𝘀𝘁𝗲𝗻𝗰𝘆 𝗶𝘀 𝗸𝗲𝘆: Try to review daily. Although it may feel slow, remember that the Prophet Muhammad (peace be upon him) said, "𝘛𝘩𝘦 𝘮𝘰𝘴𝘵 𝘣𝘦𝘭𝘰𝘷𝘦𝘥 𝘢𝘤𝘵𝘴 𝘰𝘧 𝘸𝘰𝘳𝘴𝘩𝘪𝘱 𝘢𝘳𝘦 𝘵𝘩𝘰𝘴𝘦 𝘵𝘩𝘢𝘵 𝘢𝘳𝘦 𝘤𝘰𝘯𝘴𝘪𝘴𝘵𝘦𝘯𝘵, 𝘦𝘷𝘦𝘯 𝘪𝘧 𝘵𝘩𝘦𝘺 𝘢𝘳𝘦 𝘴𝘮𝘢𝘭𝘭” (Sahih Muslim 783).
+					`,
+				},
+			},
+		})
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		log.Println("Sent help text")
+		return
+
 	/** Handle Default */
 	default:
 		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "Please only input 'Learn', 'Review', 'Status', 'Show', or 'Help' if you want to know the details",
-				},
-				messaging_api.TextMessage{
-					Text: "𝙏𝙚𝙨𝙩",
+					Text: "Please only input 𝙡𝙚𝙖𝙧𝙣, 𝙧𝙚𝙫𝙞𝙚𝙬, 𝙨𝙩𝙖𝙩𝙪𝙨, 𝙨𝙝𝙤𝙬, or 𝙝𝙚𝙡𝙥 if you want to know the details",
 				},
 			},
 		})
@@ -390,10 +441,12 @@ func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, me
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "This command is for adding page into your memorization list. After you memorized page of Quran, add the page into this command. Yahfaz will let you know, when you need to review this page later by using 'review' command.",
+					Text: `𝙇𝙚𝙖𝙧𝙣 𝘾𝙤𝙢𝙢𝙖𝙣𝙙
+
+Use this command to add pages to your memorization list. After you've memorized a Quran page, add it here. Yahfaz will notify you when it's time to review this page using the 𝙧𝙚𝙫𝙞𝙚𝙬 command.`,
 				},
 				messaging_api.TextMessage{
-					Text: "Please input quran pages that you want to add into your memorization",
+					Text: "Please enter the Quran pages you want to add to your memorization.",
 				},
 			},
 		})
@@ -415,7 +468,7 @@ func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, me
 				ReplyToken: replyToken,
 				Messages: []messaging_api.MessageInterface{
 					messaging_api.TextMessage{
-						Text: "Please only input the number, 'Cancel' if you want to cancel, or 'Help' if you want to know the details",
+						Text: "Please enter number only, 𝙘𝙖𝙣𝙘𝙚𝙡 if you want to cancel, or 𝙝𝙚𝙡𝙥 if you want to know the details",
 					},
 				},
 			})
@@ -438,7 +491,7 @@ func learnStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, me
 						Text: fmt.Sprintf("There is no page %d in Quran Mushaf Utsmani", pageID),
 					},
 					messaging_api.TextMessage{
-						Text: "Please input quran pages that you want to add into your memorization",
+						Text: "Please enter the Quran pages you want to add to your memorization.",
 					},
 				},
 			})
@@ -506,7 +559,7 @@ func confirmStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, 
 						Text: fmt.Sprintf("You've already added page %d", learnState[userID]),
 					},
 					messaging_api.TextMessage{
-						Text: "Please input quran pages that you want to add into your memorization",
+						Text: "Please enter the Quran pages you want to add to your memorization.",
 					},
 				},
 			})
@@ -546,7 +599,7 @@ func confirmStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, 
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "Please input quran pages that you want to add into your memorization",
+					Text: "Please enter the Quran pages you want to add to your memorization.",
 				},
 			},
 		})
@@ -559,6 +612,23 @@ func confirmStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, 
 		state[userID] = "learn"
 		learnState[userID] = 0
 		log.Println("Confirmation no")
+
+	default:
+		_, err := bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
+			ReplyToken: replyToken,
+			Messages: []messaging_api.MessageInterface{
+				messaging_api.TextMessage{
+					Text: "Please enter 𝙮𝙚𝙨 or 𝙣𝙤.",
+				},
+			},
+		})
+
+		if err != nil {
+			log.Println(err.Error())
+			return
+		}
+
+		log.Println("Default text sent")
 	}
 }
 
@@ -587,7 +657,7 @@ func reviewStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, m
 						Text: fmt.Sprintf("Page %d reviewed.", reviewState[userID].page),
 					},
 					messaging_api.TextMessage{
-						Text: "Congratulation, all your review cards are reviewed.",
+						Text: "Congratulation, all your review pages are reviewed.",
 					},
 				},
 			})
@@ -601,9 +671,6 @@ func reviewStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, m
 			state[userID] = "idle"
 			return
 		}
-
-		reviewState[userID] = tuple{memorizations[0].ID, memorizations[0].PageID.Int64}
-
 		_, err = bot.ReplyMessage(&messaging_api.ReplyMessageRequest{
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
@@ -611,7 +678,7 @@ func reviewStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, m
 					Text: fmt.Sprintf("Page %d reviewed.", reviewState[userID].page),
 				},
 				messaging_api.TextMessage{
-					Text: fmt.Sprintf("Review Page %d", reviewState[userID].page),
+					Text: fmt.Sprintf("Review Page %d", memorizations[0].PageID.Int64),
 				},
 				messaging_api.TemplateMessage{
 					AltText: "Button template",
@@ -635,6 +702,8 @@ func reviewStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, m
 				},
 			},
 		})
+
+		reviewState[userID] = tuple{memorizations[0].ID, memorizations[0].PageID.Int64}
 
 		if err != nil {
 			log.Println(err.Error())
@@ -669,13 +738,19 @@ func reviewStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, m
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "This command is to help you know which page from list of your memorization that you should review. You won't be able review all your memorization at once. Every time you answer 'easy' for your review, it will show in review longer than before. Please answer as honest as possible.",
-				},
-				messaging_api.TextMessage{
-					Text: "For tips, you can ask for your friend to check on your memorization or you can use another apps that could help you. For our ground rules. Easy if you made 0-2 mistakes. Good if you made 3-5 mistakes. Hard if you made more than 5 mistakes.",
-				},
-				messaging_api.TextMessage{
-					Text: "The key is to be consistent, every day at least you check once what are the pages that you need to review. Yes it will take much longer, but The Prophet Muhammad told us that the most beloved acts of worship are those that are consistent, even if they are small (Sahih Muslim 783).",
+					Text: `𝙍𝙚𝙫𝙞𝙚𝙬 𝘾𝙤𝙢𝙢𝙖𝙣𝙙
+
+This command shows which pages in your memorization list are due for review. You won’t review everything at once; each page reappears based on your previous responses, with 𝙚𝙖𝙨𝙮 reviews taking longer to reappear.
+
+Review Guidelines:
+	• Easy: 0-2 mistakes
+	• Good: 3-5 mistakes
+	• Hard: 5+ mistakes
+
+Answer as honestly as possible for effective scheduling. For accurate reviews, consider asking a friend to listen or using another memorization app.
+
+𝗖𝗼𝗻𝘀𝗶𝘀𝘁𝗲𝗻𝗰𝘆 𝗶𝘀 𝗸𝗲𝘆: Try to review daily. Although it may feel slow, remember that the Prophet Muhammad (peace be upon him) said, "𝘛𝘩𝘦 𝘮𝘰𝘴𝘵 𝘣𝘦𝘭𝘰𝘷𝘦𝘥 𝘢𝘤𝘵𝘴 𝘰𝘧 𝘸𝘰𝘳𝘴𝘩𝘪𝘱 𝘢𝘳𝘦 𝘵𝘩𝘰𝘴𝘦 𝘵𝘩𝘢𝘵 𝘢𝘳𝘦 𝘤𝘰𝘯𝘴𝘪𝘴𝘵𝘦𝘯𝘵, 𝘦𝘷𝘦𝘯 𝘪𝘧 𝘵𝘩𝘦𝘺 𝘢𝘳𝘦 𝘴𝘮𝘢𝘭𝘭” (Sahih Muslim 783).
+					`,
 				},
 			},
 		})
@@ -693,7 +768,7 @@ func reviewStateHandler(bot *messaging_api.MessagingApiAPI, replyToken string, m
 			ReplyToken: replyToken,
 			Messages: []messaging_api.MessageInterface{
 				messaging_api.TextMessage{
-					Text: "Please only input the 'Easy', 'Good', 'Hard', 'Cancel' if you want to cancel, or 'Help' if you want to know the details",
+					Text: "Please only input the 𝙚𝙖𝙨𝙮, 𝙜𝙤𝙤𝙙, 𝙝𝙖𝙧𝙙, 𝙘𝙖𝙣𝙘𝙚𝙡 if you want to cancel, or 𝙝𝙚𝙡𝙥 if you want to know the details",
 				},
 			},
 		})
