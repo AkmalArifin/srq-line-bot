@@ -25,5 +25,10 @@ func main() {
 	routes.RegisterRoutes(r)
 
 	port := ":" + os.Getenv("PORT")
-	r.Run(port)
+	err = r.Run(port)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
 }
